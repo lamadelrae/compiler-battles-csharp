@@ -1,9 +1,6 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SimpleCompiler.Models.Nodes;
+using SimpleCompiler.CodeGenerator;
 using SimpleCompiler.Services;
-using System;
-using System.Collections.Generic;
 
 public class Program
 {
@@ -187,6 +184,10 @@ public class Program
 
         dynamic dynamicAst = JsonConvert.DeserializeObject(json);
         var ast = TypedAstGenerator.Generate(dynamicAst.expression);
-        TypedAstReader.Read(ast);
+        //TypedAstReader.Read(ast);
+
+        var js = JavascriptCodeGenerator.GenerateJavaScript(ast);
+        Console.WriteLine(js);
+        File.WriteAllText(Directory.GetCurrentDirectory() + "/generated_code.js", js);
     }
 }
