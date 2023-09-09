@@ -66,7 +66,6 @@ public static class Interpreter
     {
         var printVal = Handle(print.Value, env);
 
-        // Print based on the value's kind
         Console.WriteLine(printVal switch
         {
             { Kind: "number" } => printVal.AsInt().ToString(),
