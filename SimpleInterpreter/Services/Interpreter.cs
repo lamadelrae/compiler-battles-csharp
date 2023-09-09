@@ -14,13 +14,7 @@ public static class Interpreter
         switch (term.Kind)
         {
             case "Let":
-                var let = (Let)term;
-                var newEnv = env.DeepClone();
-                var value = Handle(let.Value, newEnv);
-
-                newEnv.Objects.Add(let.Name.Text, value);
-
-                return Handle(let.Next, newEnv);
+                return HandleLet((Let)term, env);
 
             case "Str":
                 return InterpretationResult.From("string", ((String)term).Value);
@@ -29,65 +23,98 @@ public static class Interpreter
             case "Int":
                 return InterpretationResult.From("number", ((Int)term).Value);
             case "Var":
-                var @var = (Var)term;
-
-                var isValValid = env.Objects.TryGetValue(@var.Text, out var result);
-                if (!isValValid)
-                    throw new Exception();
-
-                return result;
+                return HandleVar((Var)term, env);
             case "If":
-                var @if = (If)term;
-                var condition = Handle(@if.Condition, env);
-                var @bool = condition.AsBool();
-
-                return Handle(@bool ? @if.Then : @if.Otherwise, env);
-
+                return HandleIf((If)term, env);
             case "Binary":
-                var binary = (Binary)term;
-
-                var left = Handle(binary.Lhs, env);
-                var right = Handle(binary.Rhs, env);
-
-                return BinaryHandler.Handle(left, right, binary.Op);
-
+                return HandleBinary((Binary)term, env);
             case "Print":
-                var print = (Print)term;
-                var printVal = Handle(print.Value, env);
-
-                if (printVal.Kind == "number") Console.WriteLine(printVal.AsInt());
-                if (printVal.Kind == "boolean") Console.WriteLine(printVal.AsBool());
-                if (printVal.Kind == "string") Console.WriteLine(printVal.AsString());
-                if (printVal.Kind == "closure") Console.WriteLine(printVal.AsClosure());
-
-                return printVal;
-
+                return HandlePrint((Print)term, env);
             case "Call":
-                var call = (Call)term;
-                var function = Handle(call.Callee, env);
-
-                var closure = function.AsClosure();
-                var closureEnv = closure.Env.DeepClone();
-
-                if (call.Arguments.Count != closure.Parameters.Count) throw new Exception("Length not right");
-
-                for (int i = 0; i < closure.Parameters.Count; i++)
-                {
-                    var param = closure.Parameters[i];
-                    var functionsArg = call.Arguments[i];
-
-                    closureEnv.Objects.Add(param, Handle(functionsArg, env));
-                }
-
-                return Handle(closure.Body, closureEnv);
-
-
+                return HandleCall((Call)term, env);
             case "Function":
-                var func = (Function)term;
-                return InterpretationResult.From("closure", new Closure() { Body = func.Value, Env = env, Parameters = func.Parameters.Select(x => x.Text).ToList() });
+                return HandleFunction((Function)term, env);
 
             default:
                 throw new NotImplementedException();
         }
+    }
+
+    private static InterpretationResult HandleLet(Let let, InterpretationEnvironment env)
+    {
+        var newEnv = env.DeepClone();
+        var value = Handle(let.Value, newEnv);
+
+        newEnv.Objects.Add(let.Name.Text, value);
+
+        return Handle(let.Next, newEnv);
+    }
+
+    private static InterpretationResult HandleVar(Var var, InterpretationEnvironment env)
+    {
+        var isValValid = env.Objects.TryGetValue(var.Text, out var result);
+        if (!isValValid)
+            throw new Exception();
+
+        return result;
+    }
+
+    private static InterpretationResult HandleIf(If @if, InterpretationEnvironment env)
+    {
+        var condition = Handle(@if.Condition, env);
+        var @bool = condition.AsBool();
+
+        return Handle(@bool ? @if.Then : @if.Otherwise, env);
+    }
+
+    private static InterpretationResult HandleBinary(Binary binary, InterpretationEnvironment env)
+    {
+        var left = Handle(binary.Lhs, env);
+        var right = Handle(binary.Rhs, env);
+
+        return BinaryHandler.Handle(left, right, binary.Op);
+    }
+
+    private static InterpretationResult HandlePrint(Print print, InterpretationEnvironment env)
+    {
+        var printVal = Handle(print.Value, env);
+
+        // Print based on the value's kind
+        Console.WriteLine(printVal switch
+        {
+            { Kind: "number" } => printVal.AsInt().ToString(),
+            { Kind: "boolean" } => printVal.AsBool().ToString(),
+            { Kind: "string" } => printVal.AsString(),
+            { Kind: "closure" } => printVal.AsClosure().ToString(),
+            _ => throw new NotImplementedException(),
+        });
+
+        return printVal;
+    }
+
+    private static InterpretationResult HandleCall(Call call, InterpretationEnvironment env)
+    {
+        var function = Handle(call.Callee, env);
+
+        var closure = function.AsClosure();
+        var closureEnv = closure.Env.DeepClone();
+
+        if (call.Arguments.Count != closure.Parameters.Count)
+            throw new Exception("Length not right");
+
+        for (int i = 0; i < closure.Parameters.Count; i++)
+        {
+            var param = closure.Parameters[i];
+            var functionsArg = call.Arguments[i];
+
+            closureEnv.Objects.Add(param, Handle(functionsArg, env));
+        }
+
+        return Handle(closure.Body, closureEnv);
+    }
+
+    private static InterpretationResult HandleFunction(Function func, InterpretationEnvironment env)
+    {
+        return InterpretationResult.From("closure", new Closure() { Body = func.Value, Env = env, Parameters = func.Parameters.Select(x => x.Text).ToList() });
     }
 }
