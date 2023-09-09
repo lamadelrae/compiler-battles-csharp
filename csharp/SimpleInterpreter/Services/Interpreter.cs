@@ -83,7 +83,7 @@ public static class Interpreter
         var function = Handle(call.Callee, env);
 
         var closure = function.AsClosure();
-        var closureEnv = closure.Env.DeepClone();
+        var newEnv = closure.Env.DeepClone();
 
         if (call.Arguments.Count != closure.Parameters.Count)
             throw new Exception("Length not right");
@@ -91,12 +91,13 @@ public static class Interpreter
         for (int i = 0; i < closure.Parameters.Count; i++)
         {
             var param = closure.Parameters[i];
-            var functionsArg = call.Arguments[i];
+            var argument = call.Arguments[i];
+            var argumentValue = Handle(argument, env);
 
-            closureEnv.Objects.Add(param, Handle(functionsArg, env));
+            newEnv.Objects.Add(param, argumentValue);
         }
 
-        return Handle(closure.Body, closureEnv);
+        return Handle(closure.Body, newEnv);
     }
 
     private static InterpretationResult HandleFunction(Function func, InterpretationEnvironment env)

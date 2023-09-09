@@ -165,7 +165,7 @@ public class Program
                 ""arguments"": [
                   {
                     ""kind"": ""Int"",
-                    ""value"": 10,
+                    ""value"": 5,
                     ""location"": {
                       ""start"": 101,
                       ""end"": 103,
