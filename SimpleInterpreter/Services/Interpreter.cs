@@ -11,33 +11,20 @@ public static class Interpreter
 {
     public static InterpretationResult Handle(Term term, InterpretationEnvironment env)
     {
-        switch (term.Kind)
+        return term.Kind switch
         {
-            case "Let":
-                return HandleLet((Let)term, env);
-
-            case "Str":
-                return InterpretationResult.From("string", ((String)term).Value);
-            case "Bool":
-                return InterpretationResult.From("boolean", ((Bool)term).Value);
-            case "Int":
-                return InterpretationResult.From("number", ((Int)term).Value);
-            case "Var":
-                return HandleVar((Var)term, env);
-            case "If":
-                return HandleIf((If)term, env);
-            case "Binary":
-                return HandleBinary((Binary)term, env);
-            case "Print":
-                return HandlePrint((Print)term, env);
-            case "Call":
-                return HandleCall((Call)term, env);
-            case "Function":
-                return HandleFunction((Function)term, env);
-
-            default:
-                throw new NotImplementedException();
-        }
+            "Let" => HandleLet((Let)term, env),
+            "Str" => InterpretationResult.From("string", ((String)term).Value),
+            "Bool" => InterpretationResult.From("boolean", ((Bool)term).Value),
+            "Int" => InterpretationResult.From("number", ((Int)term).Value),
+            "Var" => HandleVar((Var)term, env),
+            "If" => HandleIf((If)term, env),
+            "Binary" => HandleBinary((Binary)term, env),
+            "Print" => HandlePrint((Print)term, env),
+            "Call" => HandleCall((Call)term, env),
+            "Function" => HandleFunction((Function)term, env),
+            _ => throw new NotImplementedException(),
+        };
     }
 
     private static InterpretationResult HandleLet(Let let, InterpretationEnvironment env)
